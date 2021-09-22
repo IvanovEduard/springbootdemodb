@@ -1,0 +1,45 @@
+version: '3'
+services:
+  mysql:
+    container_name: mysql56
+    ports:
+      - "3306:3306"
+    image: "percona/percona-server:5.6"
+    volumes:
+      - ./../db/docker/mysql56/data/:/var/lib/mysql
+      - ./../db/docker/mysql56/conf/my.cnf:/etc/my.cnf
+      - /tmp/:/tmp
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - MYSQL_ROOT_PASSWORD=root56
+      - MYSQL_USER=online
+      - MYSQL_PASSWORD=online
+      - MYSQL_DATABASE=kazaam
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.3.1
+    container_name: $ZOOKEEPER_CONTAINER_NAME
+    ports:
+      - "${ZOOKEEPER_CONTAINER_HOST_PORT}:${ZOOKEEPER_CONTAINER_PORT}"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    logging:
+      driver: none
+
+  kafka:
+    image: confluentinc/cp-kafka:5.3.1
+    container_name: $KAFKA_CONTAINER_NAME
+    ports:
+      - "${KAFKA_CONTAINER_HOST_PORT}:${KAFKA_CONTAINER_PORT}"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_CONTAINER_INTERNAL_NAME}:${KAFKA_CONTAINER_INTERNAL_PORT},PLAINTEXT_HOST://localhost:9095
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    logging:
+      driver: none
